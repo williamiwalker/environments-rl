@@ -4,15 +4,23 @@ from enum import IntEnum
 import numpy as np
 from gym import error, spaces, utils
 from gym.utils import seeding
+from configurations import config_grabber as cg
+import math
+import operator
+from functools import reduce
+
+import traceback
 
 # Size in pixels of a cell in the full-scale human view
 CELL_PIXELS = 32
 
-# Number of cells (width and height) in the agent view
-AGENT_VIEW_SIZE = 7
+config = cg.Configuration.grab()
 
-# Size of the array given as an observation to the agent
-OBS_ARRAY_SIZE = (AGENT_VIEW_SIZE, AGENT_VIEW_SIZE, 3)
+AGENT_VIEW_SIZE = config.agent_view_size
+EXTRA_OBSERVATIONS_SIZE = 5
+OBS_ARRAY_SIZE = (AGENT_VIEW_SIZE, AGENT_VIEW_SIZE)
+
+
 
 # Map of color names to RGB values
 COLORS = {
@@ -696,23 +704,25 @@ class MiniGridEnv(gym.Env):
         see_through_walls=False,
         seed=1337
     ):
+
+        # Grab configuration
+        self.config = cg.Configuration.grab()
+
+
         # Action enumeration for this environment
         self.actions = MiniGridEnv.Actions
 
         # Actions are discrete integer values
         self.action_space = spaces.Discrete(len(self.actions))
 
-        # Observations are dictionaries containing an
-        # encoding of the grid and a textual 'mission' string
+        imgSize = reduce(operator.mul, OBS_ARRAY_SIZE, 1) + EXTRA_OBSERVATIONS_SIZE
+        elemSize = len(IDX_TO_OBJECT)
         self.observation_space = spaces.Box(
             low=0,
-            high=255,
-            shape=OBS_ARRAY_SIZE,
+            high=elemSize,
+            shape=(imgSize,),
             dtype='uint8'
         )
-        self.observation_space = spaces.Dict({
-            'image': self.observation_space
-        })
 
         # Range of possible rewards
         self.reward_range = (0, 1)
@@ -725,7 +735,10 @@ class MiniGridEnv(gym.Env):
 
         # Environment configuration
         self.grid_size = grid_size
+        # Overriding the max_num_steps
         self.max_steps = max_steps
+        if hasattr(self.config, 'max_num_steps'):
+            self.max_steps = self.config.max_num_steps
         self.see_through_walls = see_through_walls
 
         # Starting position and direction for the agent
@@ -1201,6 +1214,19 @@ class MiniGridEnv(gym.Env):
 
         return obs, reward, done, {}
 
+
+    def print_grid(self, grid):
+
+        for i, e in enumerate(grid.grid):
+            if i % grid.height == 0:
+                print("")
+            if e is not None:
+                print(str(e.type).ljust(12), end="\t")
+            else:
+                print("none".ljust(12),  end="\t")
+        print("")
+
+
     def gen_obs_grid(self):
         """
         Generate the sub-grid observed by the agent.
@@ -1233,29 +1259,150 @@ class MiniGridEnv(gym.Env):
 
         return grid, vis_mask
 
+
+
+    def gen_obs_decoded(self):
+        """
+        Generate the agent's view (partially observable, low-resolution encoding)
+        """
+        grid, vis_mask = self.gen_obs_grid()
+
+        if self.config.debug_mode:
+            print("\nAgent View Original")
+            self.print_grid(grid)
+
+        """if Perception.light_on_current_room(self):"""
+        try:
+            agent_pos = (AGENT_VIEW_SIZE // 2, AGENT_VIEW_SIZE - 1)
+
+            obs_door_open = 0
+            obs_light_on = 0
+            current_room = 0
+            current_room_light = 0
+            next_room_light = 0
+
+            # if self.roomList:
+            #     for x in self.roomList:
+            #         # Save room number
+            #         if x.objectInRoom(self.agent_pos):
+            #             current_room = x.number
+            #             current_room_light = x.getLight()
+            #         else:
+            #             next_room_light = x.getLight()
+            #
+            #         # check if room is on the dark
+            #         if not x.getLight():
+            #             for j in range(0, grid.height):
+            #                 for i in range(0, grid.width):
+            #                     # pass the obs coordinates (i, j) into the absolute grid coordinates (xpos, ypos).
+            #                     xpos = agent_pos[1] - j
+            #                     ypos = i - agent_pos[0]
+            #                     (xpos, ypos) = self.get_grid_coords_from_view((xpos, ypos))
+            #
+            #                     # check if the object position is on the room
+            #                     if x.objectInRoom((xpos, ypos)):
+            #                         if grid.grid[(j * AGENT_VIEW_SIZE) + i] is not None:
+            #                             grid.grid[i + (j * AGENT_VIEW_SIZE)] = None
+
+            for j in range(0, grid.height):
+                for i in range(0, grid.width):
+
+                    v = grid.get(i, j)
+
+                    if hasattr(v, 'is_open') and v.is_open:
+                        obs_door_open = 1
+
+                    if hasattr(v, 'is_on') and v.is_on:
+                        obs_light_on = 1
+
+
+            if self.config.debug_mode:
+                print("\n\nobs_door_open\t\t" + str(obs_door_open))
+                print("obs_light_on\t\t" + str(obs_light_on))
+                print("current_room\t\t" + str(current_room))
+                print("current_room_light\t" + str(current_room_light*1))
+                print("next_room_light\t\t" + str(next_room_light*1) + "\n\n")
+
+
+            return grid, (obs_door_open, obs_light_on, current_room, current_room_light*1, next_room_light*1)
+
+        except AttributeError:
+            traceback.print_exc()
+            print("ERROR!!!")
+
+
+
+    # def gen_obs(self):
+    #     """
+    #     Generate the agent's view (partially observable, low-resolution encoding)
+    #     """
+    #
+    #     grid, vis_mask = self.gen_obs_grid()
+    #
+    #     # Encode the partially observable view into a numpy array
+    #     image = grid.encode(vis_mask)
+    #
+    #     assert hasattr(self, 'mission'), "environments must define a textual mission string"
+    #
+    #     # Observations are dictionaries containing:
+    #     # - an image (partially observable view of the environment)
+    #     # - the agent's direction/orientation (acting as a compass)
+    #     # - a textual mission string (instructions for the agent)
+    #     obs = {
+    #         'image': image,
+    #         'direction': self.agent_dir,
+    #         'mission': self.mission
+    #     }
+    #
+    #     return obs
+
+
     def gen_obs(self):
         """
         Generate the agent's view (partially observable, low-resolution encoding)
         """
+        grid, extra_observations = self.gen_obs_decoded()
 
-        grid, vis_mask = self.gen_obs_grid()
+        if self.config.debug_mode:
+            print("\nAgent View Retreived")
+            self.print_grid(grid)
 
-        # Encode the partially observable view into a numpy array
-        image = grid.encode(vis_mask)
+        """if Perception.light_on_current_room(self):"""
+        try:
 
-        assert hasattr(self, 'mission'), "environments must define a textual mission string"
+            array = np.zeros(shape=(grid.width, grid.height, 1), dtype='uint8')
 
-        # Observations are dictionaries containing:
-        # - an image (partially observable view of the environment)
-        # - the agent's direction/orientation (acting as a compass)
-        # - a textual mission string (instructions for the agent)
-        obs = {
-            'image': image,
-            'direction': self.agent_dir,
-            'mission': self.mission
-        }
+            obs_door_open = 0
+            obs_light_on = 0
 
-        return obs
+            for j in range(0, grid.height):
+                for i in range(0, grid.width):
+
+                    v = grid.get(i, j)
+
+                    if v == None:
+                        continue
+
+                    array[i, j, 0] = OBJECT_TO_IDX[v.type]
+
+                    if hasattr(v, 'is_open') and v.is_open:
+                        obs_door_open = 1
+
+                    if hasattr(v, 'is_on') and v.is_on:
+                        obs_light_on = 1
+
+            image = array
+
+            flatten_image = image.flatten()
+
+            obs = np.append(flatten_image, extra_observations)
+
+            return obs
+
+        except AttributeError:
+            traceback.print_exc()
+            print("ERROR!!!")
+            # return super().gen_obs()
 
     def get_obs_render(self, obs, tile_pixels=CELL_PIXELS//2):
         """
