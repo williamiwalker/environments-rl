@@ -68,6 +68,41 @@ class Room:
         return False
 
 
+
+class Wall(WorldObj):
+    def __init__(self, color='grey'):
+        super().__init__('wall', color)
+
+    def see_behind(self):
+        return False
+
+    def render(self, r):
+        self._set_color(r)
+        r.drawPolygon([
+            (0          , CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS,           0),
+            (0          ,           0)
+        ])
+
+
+class Goal(WorldObj):
+    def __init__(self):
+        super().__init__('goal', 'green')
+
+    def can_overlap(self):
+        return True
+
+    def render(self, r):
+        self._set_color(r)
+        r.drawPolygon([
+            (0          , CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS,           0),
+            (0          ,           0)
+        ])
+
+
 class Water(WorldObj):
     def __init__(self):
         super(Water, self).__init__('water', 'blue')

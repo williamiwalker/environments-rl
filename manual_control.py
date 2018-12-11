@@ -17,7 +17,7 @@ def main():
         "--env-name",
         dest="env_name",
         help="gym environment to load",
-        default='MiniGrid-GoToObject-6x6-N2-v0'
+        default='MiniGrid-UnlockPickup-v0'
     )
     (options, args) = parser.parse_args()
 

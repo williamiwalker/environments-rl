@@ -8,7 +8,7 @@ class UnlockPickup(RoomGrid):
     """
 
     def __init__(self, seed=None):
-        room_size = 6
+        room_size = 9
         super().__init__(
             num_rows=1,
             num_cols=2,

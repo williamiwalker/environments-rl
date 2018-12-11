@@ -58,7 +58,10 @@ OBJECT_TO_IDX = {
     'ball'          : 7,
     'box'           : 8,
     'goal'          : 9,
-    'lava'          : 10
+    'lava'          : 10,
+    'water'         : 11,
+    'dirt'          : 12,
+    'vase'          : 13
 }
 
 IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
@@ -110,6 +113,10 @@ class WorldObj:
         return True
 
     def toggle(self, env, pos):
+        """Method to trigger/toggle an action this object performs"""
+        return False
+
+    def clean(self, env, pos):
         """Method to trigger/toggle an action this object performs"""
         return False
 
@@ -404,6 +411,82 @@ class Box(WorldObj):
         env.grid.set(*pos, self.contains)
         return True
 
+
+class Water(WorldObj):
+    def __init__(self):
+        super().__init__('water', 'blue')
+
+    def can_overlap(self):
+        return True
+
+    def render(self, r):
+        self._set_color(r)
+        r.drawPolygon([
+            (0, CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS, 0),
+            (0, 0)
+        ])
+
+
+class Dirt(WorldObj):
+    def __init__(self):
+        super().__init__('dirt', 'yellow')
+
+    def can_overlap(self):
+        return True
+
+    def clean(self, env, pos):
+        x, y = MiniGridEnv.get_grid_coords_from_view(env, (1, 0))
+        env.grid.set(x, y, None)
+        return True
+
+    def render(self, r):
+        self._set_color(r)
+        r.setColor(240, 150, 0)
+        r.setLineColor(81, 41, 0)
+        r.drawPolygon([
+            (0, CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS, 0),
+            (0, 0)
+        ])
+
+
+class Vase(WorldObj):
+    def __init__(self):
+        super().__init__('vase', 'grey')
+
+    def can_overlap(self):
+        return False
+
+    def toggle(self, env, pos):
+        x, y = MiniGridEnv.get_grid_coords_from_view(env, (1, 0))
+        env.grid.set(x, y, Dirt())
+        return True
+
+    def render(self, r):
+        self._set_color(r)
+        r.setColor(255, 255, 255)
+        QUARTER_CELL = 0.25 * CELL_PIXELS
+        DEMI_CELL = 0.5 * CELL_PIXELS
+        r.drawCircle(DEMI_CELL, DEMI_CELL, DEMI_CELL)
+        r.drawPolygon([
+            (QUARTER_CELL, 3 * QUARTER_CELL),
+            (3 * QUARTER_CELL, 3 * QUARTER_CELL),
+            (3 * QUARTER_CELL, QUARTER_CELL),
+            (QUARTER_CELL, QUARTER_CELL)
+        ])
+        r.setColor(240, 150, 0)
+        r.drawPolygon([
+            (0.32 * CELL_PIXELS, 0.7 * CELL_PIXELS),
+            (0.7 * CELL_PIXELS, 0.7 * CELL_PIXELS),
+            (0.7 * CELL_PIXELS, 0.32 * CELL_PIXELS),
+            (0.32 * CELL_PIXELS, 0.32 * CELL_PIXELS)
+        ])
+
+
+
 class Grid:
     """
     Represent a grid and operations on it
@@ -694,8 +777,11 @@ class MiniGridEnv(gym.Env):
         # Toggle/activate an object
         toggle = 5
 
-        # Done completing task
-        done = 6
+        # clean the dirt
+        clean = 6
+
+        # Done completing task (always keep it as last)
+        done = 7
 
     def __init__(
         self,
@@ -735,10 +821,7 @@ class MiniGridEnv(gym.Env):
 
         # Environment configuration
         self.grid_size = grid_size
-        # Overriding the max_num_steps
         self.max_steps = max_steps
-        if hasattr(self.config, 'max_num_steps'):
-            self.max_steps = self.config.max_num_steps
         self.see_through_walls = see_through_walls
 
         # Starting position and direction for the agent
@@ -884,7 +967,7 @@ class MiniGridEnv(gym.Env):
         Compute the reward to be given upon success
         """
 
-        return 1 - 0.9 * (self.step_count / self.max_steps)
+        return self.config.rewards.standard.goal - 0.9 * (self.step_count / self.max_steps)
 
     def _rand_int(self, low, high):
         """
@@ -1082,6 +1165,35 @@ class MiniGridEnv(gym.Env):
 
         return vx, vy
 
+    def get_grid_coords_from_view(self, coordinates):
+        """
+        Dual of "get_view_coords". Translate and rotate relative to the agent coordinates (i, j) into the
+        absolute grid coordinates.
+        Need to have tuples of integers for the position of the agent and its direction
+        :param coordinates: tuples of integers (vertical,horizontal) position from the agent relative to its position
+        :return : coordinates translated into the absolute grid coordinates.
+        """
+        ax, ay = self.agent_pos
+        ad = self.agent_dir
+        x, y = coordinates
+        # agent facing down
+        if ad == 1:
+            ax -= y
+            ay += x
+        # agent facing right
+        elif ad == 0:
+            ax += x
+            ay += y
+        # agent facing left
+        elif ad == 2:
+            ax -= x
+            ay -= y
+        # agent facing up
+        elif ad == 3:
+            ax += y
+            ay -= x
+        return ax, ay
+
     def get_view_exts(self):
         """
         Get the extents of the square set of tiles visible to the agent
@@ -1154,6 +1266,8 @@ class MiniGridEnv(gym.Env):
         reward = 0
         done = False
 
+        info = {"event": [], "steps_count": self.step_count}
+
         # Get the position in front of the agent
         fwd_pos = self.front_pos
 
@@ -1174,11 +1288,25 @@ class MiniGridEnv(gym.Env):
         elif action == self.actions.forward:
             if fwd_cell == None or fwd_cell.can_overlap():
                 self.agent_pos = fwd_pos
-            if fwd_cell != None and fwd_cell.type == 'goal':
+            # Step into Water
+            if fwd_cell is not None and fwd_cell.type == 'water':
                 done = True
-                reward = self._reward()
+                reward = self.config.rewards.standard.death
+                info["event"].append("died")
+            if fwd_cell is not None and fwd_cell.type == 'goal':
+                try:
+                    if self.goal_enabled():
+                        done = True
+                        reward = self._reward()
+                        info["event"].append("goal")
+                except:
+                    done = True
+                    reward = self._reward()
+                    info["event"].append("goal")
             if fwd_cell != None and fwd_cell.type == 'lava':
                 done = True
+                reward = self.config.rewards.standard.death
+                info["event"].append("died")
 
         # Pick up an object
         elif action == self.actions.pickup:
@@ -1199,6 +1327,13 @@ class MiniGridEnv(gym.Env):
         elif action == self.actions.toggle:
             if fwd_cell:
                 fwd_cell.toggle(self, fwd_pos)
+
+        # Clean an object
+        elif action == self.actions.clean:
+            if fwd_cell is not None and fwd_cell.type == 'dirt':
+                reward = self.config.rewards.cleaningenv.clean
+            if fwd_cell:
+                fwd_cell.clean(self, fwd_pos)
 
         # Done action (not used by default)
         elif action == self.actions.done:
@@ -1225,6 +1360,10 @@ class MiniGridEnv(gym.Env):
             else:
                 print("none".ljust(12),  end="\t")
         print("")
+
+
+    def goal_enabled(self):
+        raise NotImplementedError()
 
 
     def gen_obs_grid(self):

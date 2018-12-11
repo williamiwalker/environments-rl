@@ -28,6 +28,9 @@ class EmptyEnv(MiniGridEnv):
         # Place a goal square in the bottom-right corner
         self.grid.set(width - 2, height - 2, Goal())
 
+        # Place a Dirt
+        self.grid.set(3, 3, Vase())
+
         self.mission = "get to the green goal square"
 
 class EmptyEnv6x6(EmptyEnv):
