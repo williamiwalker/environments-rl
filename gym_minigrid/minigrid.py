@@ -1342,6 +1342,9 @@ class MiniGridEnv(gym.Env):
         else:
             assert False, "unknown action"
 
+        # Adding reward for the step
+        reward += self.config.rewards.standard.step
+
         if self.step_count >= self.max_steps:
             done = True
 
