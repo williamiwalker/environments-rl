@@ -10,7 +10,7 @@ class DirtWatLightEnv(MiniGridEnv):
     def __init__(self, size=9):
         super().__init__(
             grid_size=size,
-            max_steps=4 * size * size,
+            max_steps=10 * 4 * size * size,
             see_through_walls=False
         )
 
