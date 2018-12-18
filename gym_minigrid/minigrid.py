@@ -835,6 +835,8 @@ class MiniGridEnv(gym.Env):
         # Initialize the state
         self.reset()
 
+        self.total_step_count = 0
+
     def setactions(self, actions):
         self.actions = actions
         self.action_space = spaces.Discrete(len(self.actions))
@@ -1268,11 +1270,12 @@ class MiniGridEnv(gym.Env):
 
     def step(self, action):
         self.step_count += 1
+        self.total_step_count += 1
 
         reward = 0
         done = False
 
-        info = {"event": [], "steps_count": self.step_count}
+        info = {"died": 0, "goal": 0, "max_steps": 0, "epi_steps": self.step_count, "tot_steps": self.total_step_count}
 
         # Get the position in front of the agent
         fwd_pos = self.front_pos
@@ -1298,7 +1301,7 @@ class MiniGridEnv(gym.Env):
             if fwd_cell is not None and fwd_cell.type == 'water':
                 done = True
                 reward = self.config.rewards.standard.death
-                info["event"].append("died")
+                info["died"] = 1
             if fwd_cell is not None and fwd_cell.type == 'goal':
                 try:
                     if self.goal_enabled():
@@ -1307,18 +1310,17 @@ class MiniGridEnv(gym.Env):
                             reward = self._reward()
                         else:
                             reward = self.config.rewards.standard.goal
-                        info["event"].append("goal")
                 except:
                     done = True
                     if self.config.rewards.standard.discounted:
                         reward = self._reward()
                     else:
                         reward = self.config.rewards.standard.goal
-                    info["event"].append("goal")
+                info["goal"] = 1
             if fwd_cell != None and fwd_cell.type == 'lava':
                 done = True
                 reward = self.config.rewards.standard.death
-                info["event"].append("died")
+                info["died"] = 1
 
         # Pick up an object
         elif hasattr(self.actions, "pickup") and action == self.actions.pickup:
@@ -1359,10 +1361,11 @@ class MiniGridEnv(gym.Env):
 
         if self.step_count >= self.max_steps:
             done = True
+            info["max_steps"] = 1
 
         obs = self.gen_obs()
 
-        return obs, reward, done, {}
+        return obs, reward, done, info
 
 
     def print_grid(self, grid):
