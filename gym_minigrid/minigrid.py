@@ -1281,17 +1281,17 @@ class MiniGridEnv(gym.Env):
         fwd_cell = self.grid.get(*fwd_pos)
 
         # Rotate left
-        if action == self.actions.left:
+        if hasattr(self.actions, "left") and action == self.actions.left:
             self.agent_dir -= 1
             if self.agent_dir < 0:
                 self.agent_dir += 4
 
         # Rotate right
-        elif action == self.actions.right:
+        elif hasattr(self.actions, "right") and action == self.actions.right:
             self.agent_dir = (self.agent_dir + 1) % 4
 
         # Move forward
-        elif action == self.actions.forward:
+        elif hasattr(self.actions, "forward") and action == self.actions.forward:
             if fwd_cell == None or fwd_cell.can_overlap():
                 self.agent_pos = fwd_pos
             # Step into Water
@@ -1321,7 +1321,7 @@ class MiniGridEnv(gym.Env):
                 info["event"].append("died")
 
         # Pick up an object
-        elif action == self.actions.pickup:
+        elif hasattr(self.actions, "pickup") and action == self.actions.pickup:
             if fwd_cell and fwd_cell.can_pickup():
                 if self.carrying is None:
                     self.carrying = fwd_cell
@@ -1329,26 +1329,26 @@ class MiniGridEnv(gym.Env):
                     self.grid.set(*fwd_pos, None)
 
         # Drop an object
-        elif action == self.actions.drop:
+        elif hasattr(self.actions, "drop") and action == self.actions.drop:
             if not fwd_cell and self.carrying:
                 self.grid.set(*fwd_pos, self.carrying)
                 self.carrying.cur_pos = fwd_pos
                 self.carrying = None
 
         # Toggle/activate an object
-        elif action == self.actions.toggle:
+        elif hasattr(self.actions, "toggle") and action == self.actions.toggle:
             if fwd_cell:
                 fwd_cell.toggle(self, fwd_pos)
 
         # Clean an object
-        elif action == self.actions.clean:
+        elif hasattr(self.actions, "clean") and action == self.actions.clean:
             if fwd_cell is not None and fwd_cell.type == 'dirt':
                 reward = self.config.rewards.cleaningenv.clean
             if fwd_cell:
                 fwd_cell.clean(self, fwd_pos)
 
         # Done action (not used by default)
-        elif action == self.actions.done:
+        elif hasattr(self.actions, "done") and action == self.actions.done:
             pass
 
         else:
