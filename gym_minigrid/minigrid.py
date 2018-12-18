@@ -1298,11 +1298,17 @@ class MiniGridEnv(gym.Env):
                 try:
                     if self.goal_enabled():
                         done = True
-                        reward = self._reward()
+                        if self.config.rewards.standard.discounted:
+                            reward = self._reward()
+                        else:
+                            reward = self.config.rewards.standard.goal
                         info["event"].append("goal")
                 except:
                     done = True
-                    reward = self._reward()
+                    if self.config.rewards.standard.discounted:
+                        reward = self._reward()
+                    else:
+                        reward = self.config.rewards.standard.goal
                     info["event"].append("goal")
             if fwd_cell != None and fwd_cell.type == 'lava':
                 done = True
