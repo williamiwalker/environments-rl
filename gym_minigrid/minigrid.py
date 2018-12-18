@@ -835,6 +835,11 @@ class MiniGridEnv(gym.Env):
         # Initialize the state
         self.reset()
 
+    def setactions(self, actions):
+        self.actions = actions
+        self.action_space = spaces.Discrete(len(self.actions))
+
+
     def reset(self):
         # Generate a new random grid at the start of each episode
         # To keep the same grid for each episode, call env.seed() with

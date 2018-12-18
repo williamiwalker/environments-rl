@@ -1,5 +1,7 @@
 from gym_minigrid.minigrid import *
 from gym_minigrid.register import register
+from enum import IntEnum
+
 
 
 class DirtWatLightEnv(MiniGridEnv):
@@ -7,12 +9,24 @@ class DirtWatLightEnv(MiniGridEnv):
     Unsafe grid environment, no obstacles, sparse reward
     """
 
+    # Enumeration of possible actions
+    class Actions(IntEnum):
+        # Turn left, turn right, move forward
+        left = 0
+        right = 1
+        forward = 2
+        # Toggle/activate an object
+        toggle = 3
+        # clean the dirt
+        clean = 4
+
     def __init__(self, size=9):
         super().__init__(
             grid_size=size,
             max_steps=10 * 4 * size * size,
             see_through_walls=False
         )
+        super().setactions(DirtWatLightEnv.Actions)
 
 
     def saveElements(self, room):
