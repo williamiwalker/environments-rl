@@ -17,7 +17,8 @@ CELL_PIXELS = 32
 config = cg.Configuration.grab()
 
 AGENT_VIEW_SIZE = config.agent_view_size
-EXTRA_OBSERVATIONS_SIZE = 5
+# EXTRA_OBSERVATIONS_SIZE = 5
+EXTRA_OBSERVATIONS_SIZE = 1
 OBS_ARRAY_SIZE = (AGENT_VIEW_SIZE, AGENT_VIEW_SIZE)
 
 
@@ -1460,13 +1461,14 @@ class MiniGridEnv(gym.Env):
 
             if self.config.debug_mode:
                 print("\n\nobs_door_open\t\t" + str(obs_door_open))
-                print("obs_light_on\t\t" + str(obs_light_on))
-                print("current_room\t\t" + str(current_room))
-                print("current_room_light\t" + str(current_room_light*1))
-                print("next_room_light\t\t" + str(next_room_light*1) + "\n\n")
+                # print("obs_light_on\t\t" + str(obs_light_on))
+                # print("current_room\t\t" + str(current_room))
+                # print("current_room_light\t" + str(current_room_light*1))
+                # print("next_room_light\t\t" + str(next_room_light*1) + "\n\n")
 
 
-            return grid, (obs_door_open, obs_light_on, current_room, current_room_light*1, next_room_light*1)
+            # return grid, (obs_door_open, obs_light_on, current_room, current_room_light*1, next_room_light*1)
+            return grid, (obs_door_open)
 
         except AttributeError:
             traceback.print_exc()
