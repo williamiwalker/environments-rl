@@ -975,7 +975,8 @@ class MiniGridEnv(gym.Env):
         Compute the reward to be given upon success
         """
 
-        return self.config.rewards.standard.goal - 0.9 * (self.step_count / self.max_steps)
+        # return self.config.rewards.standard.goal - 0.9 * (self.step_count / self.max_steps)
+        return self.config.rewards.standard.goal + self.config.rewards.standard.goal / self.step_count
 
     def _rand_int(self, low, high):
         """
