@@ -8,6 +8,9 @@ import gym
 import time
 from optparse import OptionParser
 
+from configurations import config_grabber as cg
+config = cg.Configuration.grab()
+
 import gym_minigrid
 
 def main():
@@ -22,7 +25,7 @@ def main():
     (options, args) = parser.parse_args()
 
     # Load the gym environment
-    env = gym.make(options.env_name)
+    env = gym.make(config.env_name)
 
     def resetEnv():
         env.reset()
@@ -57,6 +60,8 @@ def main():
             action = env.actions.pickup
         elif keyName == 'PAGE_DOWN':
             action = env.actions.drop
+        elif keyName == 'ALT':
+            action = env.actions.clean
 
         elif keyName == 'RETURN':
             action = env.actions.done
