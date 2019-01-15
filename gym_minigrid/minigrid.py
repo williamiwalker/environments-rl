@@ -951,7 +951,28 @@ class MiniGridEnv(gym.Env):
         Compute the reward to be given upon success
         """
 
-        return 1 - 0.9 * (self.step_count / self.max_steps)
+        # print("step_count = " + str(self.step_count))
+        # print("max_steps = " + str(self.max_steps))
+        # print("delta =" + str((self.step_count / self.max_steps)))
+        #
+        # r = 1 - 0.9 * (self.step_count / self.max_steps)
+        # print("option_1 (1) \t " + str(r))
+        #
+        # r = (1 - 0.9 * (self.step_count / self.max_steps)) * 20
+        # print("option_1 (20)\t " + str(r))
+        #
+        # r = 20 - 0.9 * (self.step_count / self.max_steps)
+        # print("option_2 (20)\t " + str(r))
+        #
+        # r = (1 - 0.9 * (self.step_count / self.max_steps)) * 50
+        # print("option_1 (50)\t " + str(r))
+        #
+        # r = 50 - 0.9 * (self.step_count / self.max_steps)
+        # print("option_2 (50)\t " + str(r))
+
+        # return (1 - 0.9 * (self.step_count / self.max_steps)) * self.config.rewards.standard.goal
+
+        return self.config.rewards.standard.goal - self.config.rewards.standard.goal*(self.step_count / self.max_steps)
 
     def _rand_int(self, low, high):
         """
