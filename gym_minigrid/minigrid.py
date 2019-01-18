@@ -1253,7 +1253,7 @@ class MiniGridEnv(gym.Env):
         reward = 0
         done = False
 
-        info = {"died": 0, "goal": 0, "max_steps": 0, "epi_steps": self.step_count, "tot_steps": self.total_step_count}
+        info = {"died": 0, "goal": 0, "violations": 0, "max_steps": self.max_steps, "epi_steps": self.step_count, "tot_steps": self.total_step_count}
 
         # Get the position in front of the agent
         fwd_pos = self.front_pos
@@ -1339,7 +1339,6 @@ class MiniGridEnv(gym.Env):
 
         if self.step_count >= self.max_steps:
             done = True
-            info["max_steps"] = 1
 
         obs = self.gen_obs()
 
