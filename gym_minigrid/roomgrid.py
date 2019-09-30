@@ -15,7 +15,8 @@ class Room:
     def __init__(
         self,
         top,
-        size
+        size,
+        light_on=True
     ):
         # Top-left corner and size (tuples)
         self.top = top
@@ -26,6 +27,9 @@ class Room:
         self.doors = [None] * 4
         self.door_pos = [None] * 4
 
+        # LightSwitch always positioned at the right of the door entrance
+        self.lightsw_pos = [None] * 4
+
         # List of rooms adjacent to this one
         # Order of the neighbors is right, down, left, up
         self.neighbors = [None] * 4
@@ -33,8 +37,16 @@ class Room:
         # Indicates if this room is behind a locked door
         self.locked = False
 
+        # Indicates if the light in the room is currently on
+        self.light_on = light_on
+
         # List of objects contained
         self.objs = []
+
+
+    def sef_light_state(self, state):
+        self.light_on = state
+
 
     def rand_pos(self, env):
         topX, topY = self.top
@@ -60,6 +72,35 @@ class Room:
 
         return True
 
+
+class LightSwitch(WorldObj):
+    def __init__(self,
+                 room,
+                 is_on=False):
+        self.room = room
+        self.is_on = is_on
+        self.room.sef_light_state(self.is_on)
+        super(LightSwitch, self).__init__('lightsw', 'yellow')
+
+    def switch(self, env, pos):
+        self.is_on = not self.is_on
+        self.room.sef_light_state(self.is_on)
+        return True
+
+    def can_overlap(self):
+        return False
+
+    def render(self, r):
+        self._set_color(r)
+        r.drawPolygon([
+            (0, CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS, 0),
+            (0, 0)
+        ])
+
+
+
 class RoomGrid(MiniGridEnv):
     """
     Environment with multiple rooms and random objects.
@@ -72,7 +113,8 @@ class RoomGrid(MiniGridEnv):
         num_rows=3,
         num_cols=3,
         max_steps=100,
-        seed=0
+        seed=0,
+        actions=None
     ):
         assert room_size > 0
         assert room_size >= 3
@@ -93,7 +135,8 @@ class RoomGrid(MiniGridEnv):
             grid_size=grid_size,
             max_steps=max_steps,
             see_through_walls=False,
-            seed=seed
+            seed=seed,
+            actions=actions
         )
 
     def room_from_pos(self, x, y):
@@ -150,16 +193,20 @@ class RoomGrid(MiniGridEnv):
                 # Door positions, order is right, down, left, up
                 if i < self.num_cols - 1:
                     room.neighbors[0] = self.room_grid[j][i+1]
-                    room.door_pos[0] = (x_m, self._rand_int(y_l, y_m))
+                    room.door_pos[0] = (x_m, self._rand_int(y_l+1, y_m-1))
+                    room.lightsw_pos[0] = (room.door_pos[0][0] - 1, room.door_pos[0][1] + 1)
                 if j < self.num_rows - 1:
                     room.neighbors[1] = self.room_grid[j+1][i]
-                    room.door_pos[1] = (self._rand_int(x_l, x_m), y_m)
+                    room.door_pos[1] = (self._rand_int(x_l+1, x_m-1), y_m)
+                    room.lightsw_pos[1] = (room.door_pos[1][0] - 1, room.door_pos[1][1] - 1)
                 if i > 0:
                     room.neighbors[2] = self.room_grid[j][i-1]
                     room.door_pos[2] = room.neighbors[2].door_pos[0]
+                    room.lightsw_pos[2] = (room.neighbors[2].lightsw_pos[0][0]+2, room.neighbors[2].lightsw_pos[0][1]-2)
                 if j > 0:
                     room.neighbors[3] = self.room_grid[j-1][i]
                     room.door_pos[3] = room.neighbors[3].door_pos[1]
+                    room.lightsw_pos[3] = (room.neighbors[3].lightsw_pos[1][0]+2, room.neighbors[3].lightsw_pos[1][1]+2)
 
         # The agent starts in the middle, facing right
         self.start_pos = (
@@ -199,15 +246,36 @@ class RoomGrid(MiniGridEnv):
             color = self._rand_color()
 
         # TODO: we probably want to add an Object.make helper function
-        assert kind in ['key', 'ball', 'box']
+        assert kind in ['key', 'ball', 'box', 'water', 'dirt', 'vase']
         if kind == 'key':
             obj = Key(color)
         elif kind == 'ball':
             obj = Ball(color)
         elif kind == 'box':
             obj = Box(color)
+        elif kind == 'water':
+            obj = Water()
+        elif kind == 'dirt':
+            obj = Dirt()
+        elif kind == 'vase':
+            obj = Vase()
 
         return self.place_in_room(i, j, obj)
+
+
+    def add_lightsw(self, i, j, affect_room, is_on=False):
+        """
+        Add a door to a room, connecting it to a neighbor
+        """
+
+        current_room = self.get_room(i, j)
+
+        lightsw = LightSwitch(current_room)
+        pos = current_room.lightsw_pos[0]
+        self.grid.set(*pos, lightsw)
+
+        return lightsw, pos
+
 
     def add_door(self, i, j, door_idx=None, color=None, locked=None):
         """

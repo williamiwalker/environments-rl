@@ -28,6 +28,7 @@ def main():
     env = gym.make(config.env_name)
 
     def resetEnv():
+        # env.seed(4)
         env.reset()
         if hasattr(env, 'mission'):
             print('Mission: %s' % env.mission)

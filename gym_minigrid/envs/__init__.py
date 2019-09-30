@@ -18,4 +18,4 @@ from gym_minigrid.envs.fourrooms import *
 from gym_minigrid.envs.lavacrossing import *
 
 from gym_minigrid.envs.customs.simplecleaning import *
-from gym_minigrid.envs.customs.light import *
+from gym_minigrid.envs.customs.cleaninglight import *

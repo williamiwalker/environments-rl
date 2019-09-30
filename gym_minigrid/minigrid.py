@@ -55,7 +55,8 @@ OBJECT_TO_IDX = {
     'lava'          : 10,
     'water'         : 11,
     'dirt'          : 12,
-    'vase'          : 13
+    'vase'          : 13,
+    'lightsw'       : 14
 }
 
 IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
@@ -112,6 +113,10 @@ class WorldObj:
 
     def clean(self, env, pos):
         """Method to trigger/toggle an action this object performs"""
+        return False
+
+    def switch(self, env, pos):
+        """Method to switch on/off on an object (ex. lightsw)"""
         return False
 
     def render(self, r):
