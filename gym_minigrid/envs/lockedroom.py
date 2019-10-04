@@ -29,14 +29,10 @@ class LockedRoom(MiniGridEnv):
     """
 
     def __init__(
-        self
+        self,
+        size=19
     ):
-        size = 19
         super().__init__(grid_size=size, max_steps=10*size)
-
-        self.observation_space = spaces.Dict({
-            'image': self.observation_space
-        })
 
     def _gen_grid(self, width, height):
         # Create the grid
@@ -93,7 +89,7 @@ class LockedRoom(MiniGridEnv):
             colors.remove(color)
             room.color = color
             if room.locked:
-                self.grid.set(*room.doorPos, LockedDoor(color))
+                self.grid.set(*room.doorPos, Door(color, is_locked=True))
             else:
                 self.grid.set(*room.doorPos, Door(color))
 
@@ -106,7 +102,7 @@ class LockedRoom(MiniGridEnv):
         self.grid.set(*keyPos, Key(lockedRoom.color))
 
         # Randomize the player start position and orientation
-        self.start_pos = self.place_agent(
+        self.agent_pos = self.place_agent(
             top=(lWallIdx, 0),
             size=(rWallIdx-lWallIdx, height)
         )
@@ -114,8 +110,8 @@ class LockedRoom(MiniGridEnv):
         # Generate the mission string
         self.mission = (
             'get the %s key from the %s room, '
-            'then use it to unlock the %s door '
-            'so you can get to the goal'
+            'unlock the %s door and '
+            'go to the goal'
         ) % (lockedRoom.color, keyRoom.color, lockedRoom.color)
 
     def step(self, action):

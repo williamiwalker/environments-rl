@@ -19,7 +19,7 @@ Please use this bibtex if you want to cite this repository in your publications:
 
 ```
 @misc{gym_minigrid,
-  author = {Chevalier-Boisvert, Maxime and Willems, Lucas},
+  author = {Chevalier-Boisvert, Maxime and Willems, Lucas and Pal, Suman},
   title = {Minimalistic Gridworld Environment for OpenAI Gym},
   year = {2018},
   publisher = {GitHub},
@@ -28,11 +28,32 @@ Please use this bibtex if you want to cite this repository in your publications:
 }
 ```
 
-This environment has been built as part of work done at the [MILA](https://mila.quebec/en/).
+List of publications & submissions using MiniGrid (please open a pull request to add missing entries):
+- [Learning Effective Subgoals with Multi-Task Hierarchical Reinforcement Learning](http://surl.tirl.info/proceedings/SURL-2019_paper_10.pdf) (Tsinghua University, August 2019)
+- [Learning distant cause and effect using only local and immediate credit assignment](https://arxiv.org/abs/1905.11589) (Incubator 491, May 2019)
+- [Learning World Graphs to Accelerate Hierarchical Reinforcement Learning](https://arxiv.org/abs/1907.00664) (Salesforce Research, 2019)
+- [Modeling the Long Term Future in Model-Based Reinforcement Learning](https://openreview.net/forum?id=SkgQBn0cF7) (Mila, ICLR 2019)
+- [Practical Open-Loop Optimistic Planning](https://arxiv.org/pdf/1904.04700.pdf) (INRIA, Apr 2019)
+- [Unifying Ensemble Methods for Q-learning via Social Choice Theory](https://arxiv.org/pdf/1902.10646.pdf) (Max Planck Institute, Feb 2019)
+- [Planning Beyond The Sensing Horizon Using a Learned Context](https://personalrobotics.cs.washington.edu/workshops/mlmp2018/assets/docs/18_CameraReadySubmission.pdf) (MLMP@IROS, 2018)
+- [Guiding Policies with Language via Meta-Learning](https://arxiv.org/abs/1811.07882) (UC Berkeley, Nov 2018)
+- [On the Complexity of Exploration in Goal-Driven Navigation](https://arxiv.org/abs/1811.06889) (CMU, NIPS, Nov 2018)
+- [Transfer and Exploration via the Information Bottleneck](https://openreview.net/forum?id=rJg8yhAqKm) (Mila, Nov 2018)
+- [Modeling the Long Term Future in Model-Based Reinforcement Learning](https://openreview.net/forum?id=SkgQBn0cF7) (Nov 2018)
+- [Learning of Sophisticated Curriculums by viewing them as Graphs over Tasks](https://openreview.net/forum?id=rJlGdsC9Ym) (ICLR, Nov 2018, withdrawn)
+- [BabyAI: First Steps Towards Grounded Language Learning With a Human In the Loop](https://arxiv.org/abs/1810.08272) (Mila, Oct 2018)
+
+This environment has been built as part of work done at the [MILA](https://mila.quebec/en/). The Dynamic obstacles environment has been added as part of work done at [IAS in TU Darmstadt](https://www.ias.informatik.tu-darmstadt.de/) and the University of Genoa for mobile robot navigation with dynamic obstacles.
 
 ## Installation
 
-Clone this repository and install the dependencies with `pip3`:
+There is now a [pip package](https://pypi.org/project/gym-minigrid/) available, which is updated periodically:
+
+```
+pip3 install gym-minigrid
+```
+
+Alternatively, to get the latest version of MiniGrid, you can clone this repository and install the dependencies with `pip3`:
 
 ```
 git clone https://github.com/maximecb/gym-minigrid.git
@@ -89,8 +110,9 @@ Structure of the world:
   - Cells that do not contain an object have the value `None`
 - Each object has an associated discrete color (string)
 - Each object has an associated type (string)
-  - Provided object types are: wall, floor, lava, door, locked_door, key, ball, box and goal
+  - Provided object types are: wall, floor, lava, door, key, ball, box and goal
 - The agent can pick up and carry exactly one object (eg: ball or key)
+- To open a locked door, the agent has to be carrying a key matching the door's color
 
 Actions in the basic environment:
 - Turn left
@@ -119,7 +141,10 @@ or to fine-tune difficulty.
 ### Empty environment
 
 Registered configurations:
+- `MiniGrid-Empty-5x5-v0`
+- `MiniGrid-Empty-Random-5x5-v0`
 - `MiniGrid-Empty-6x6-v0`
+- `MiniGrid-Empty-Random-6x6-v0`
 - `MiniGrid-Empty-8x8-v0`
 - `MiniGrid-Empty-16x16-v0`
 
@@ -131,7 +156,24 @@ This environment is an empty room, and the goal of the agent is to reach the
 green goal square, which provides a sparse reward. A small penalty is
 subtracted for the number of steps to reach the goal. This environment is
 useful, with small rooms, to validate that your RL algorithm works correctly,
-and with large rooms to experiment with sparse rewards.
+and with large rooms to experiment with sparse rewards and exploration.
+The random variants of the environment have the agent starting at a random
+position for each episode, while the regular variants have the agent always
+starting in the corner opposite to the goal.
+
+### Four rooms environment
+
+Registered configurations:
+- `MiniGrid-FourRooms-v0`
+
+<p align="center">
+<img src="/figures/four-rooms-env.png" width=380>
+</p>
+
+Classic four room reinforcement learning environment. The agent must navigate
+in a maze composed of four rooms interconnected by 4 gaps in the walls. To
+obtain a reward, the agent must reach the green goal square. Both the agent
+and the goal square are randomly placed in any of the four rooms.
 
 ### Door & key environment
 
@@ -154,6 +196,7 @@ useful to experiment with curiosity or curriculum learning.
 
 Registered configurations:
 - `MiniGrid-MultiRoom-N2-S4-v0` (two small rooms)
+- `MiniGrid-MultiRoom-N4-S5-v0` (four rooms)
 - `MiniGrid-MultiRoom-N6-v0` (six rooms)
 
 <p align="center">
@@ -371,3 +414,55 @@ Each lava stream runs across the room either horizontally or vertically, and
 has a single crossing point which can be safely used;  Luckily, a path to the
 goal is guaranteed to exist. This environment is useful for studying safety and
 safe exploration.
+
+## Distributional shift environment
+
+Registered configurations:
+- `MiniGrid-DistShift1-v0`
+- `MiniGrid-DistShift2-v0`
+
+This environment is based on one of the DeepMind [AI safety gridworlds](https://github.com/deepmind/ai-safety-gridworlds).
+The agent starts in the top-left corner and must reach the goal which is in the top-right corner, but has to avoid stepping
+into lava on its way. The aim of this environment is to test an agent's ability to generalize. There are two slightly
+different variants of the environment, so that the agent can be trained on one variant and tested on the other.
+
+<p align="center">
+  <img src="figures/DistShift1.png" width="200">
+  <img src="figures/DistShift2.png" width="200">
+</p>
+
+## Simple crossing environment
+
+Registered configurations:
+- `MiniGrid-SimpleCrossingS9N1-v0`
+- `MiniGrid-SimpleCrossingS9N2-v0`
+- `MiniGrid-SimpleCrossingS9N3-v0`
+- `MiniGrid-SimpleCrossingS11N5-v0`
+
+<p align="center">
+  <img src="figures/SimpleCrossingS9N1.png" width="200">
+  <img src="figures/SimpleCrossingS9N2.png" width="200">
+  <img src="figures/SimpleCrossingS9N3.png" width="200">
+  <img src="figures/SimpleCrossingS11N5.png" width="250">
+</p>
+
+Similar to the `LavaCrossing` environment, the agent has to reach the green
+goal square on the other corner of the room, however lava is replaced by
+walls. This MDP is therefore much easier and and maybe useful for quickly
+testing your algorithms.
+
+### Dynamic obstacles environment
+
+Registered configurations:
+- `MiniGrid-Dynamic-Obstacles-5x5-v0`
+- `MiniGrid-Dynamic-Obstacles-Random-5x5-v0`
+- `MiniGrid-Dynamic-Obstacles-6x6-v0`
+- `MiniGrid-Dynamic-Obstacles-Random-6x6-v0`
+- `MiniGrid-Dynamic-Obstacles-8x8-v0`
+- `MiniGrid-Dynamic-Obstacles-16x16-v0`
+
+<p align="center">
+<img src="/figures/dynamic_obstacles.gif">
+</p>
+
+This environment is an empty room with moving obstacles. The goal of the agent is to reach the green goal square without colliding with any obstacle. A large penalty is subtracted if the agent collides with an obstacle and the episode finishes. This environment is useful to test Dynamic Obstacle Avoidance for mobile robots with Reinforcement Learning in Partial Observability.

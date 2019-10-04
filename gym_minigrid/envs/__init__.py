@@ -15,7 +15,6 @@ from gym_minigrid.envs.redbluedoors import *
 from gym_minigrid.envs.obstructedmaze import *
 from gym_minigrid.envs.memory import *
 from gym_minigrid.envs.fourrooms import *
-from gym_minigrid.envs.lavacrossing import *
-
-from gym_minigrid.envs.customs.simplecleaning import *
-from gym_minigrid.envs.customs.cleaninglight import *
+from gym_minigrid.envs.crossing import *
+from gym_minigrid.envs.dynamicobstacles import *
+from gym_minigrid.envs.distshift import *

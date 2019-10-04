@@ -16,11 +16,11 @@ from gym_minigrid.wrappers import *
 
 print('%d environments registered' % len(env_list))
 
-for envName in env_list:
-    print('testing "%s"' % envName)
+for env_name in env_list:
+    print('testing "%s"' % env_name)
 
     # Load the gym environment
-    env = gym.make(envName)
+    env = gym.make(env_name)
     env.max_steps = min(env.max_steps, 200)
     env.reset()
     env.render('rgb_array')
@@ -45,14 +45,17 @@ for envName in env_list:
         obs, reward, done, info = env.step(action)
 
         # Validate the agent position
-        assert env.agent_pos[0] < env.grid_size
-        assert env.agent_pos[1] < env.grid_size
+        assert env.agent_pos[0] < env.width
+        assert env.agent_pos[1] < env.height
 
         # Test observation encode/decode roundtrip
         img = obs['image']
         vis_mask = img[:, :, 0] != OBJECT_TO_IDX['unseen']  # hackish
         img2 = Grid.decode(img).encode(vis_mask=vis_mask)
         assert np.array_equal(img, img2)
+
+        # Test the env to string function
+        str(env)
 
         # Check that the reward is within the specified range
         assert reward >= env.reward_range[0], reward
@@ -64,12 +67,40 @@ for envName in env_list:
 
         env.render('rgb_array')
 
+    # Test the close method
+    env.close()
+
+    env = gym.make(env_name)
+    env = ReseedWrapper(env)
+    for _ in range(10):
+        env.reset()
+        env.step(0)
+        env.close()
+
+    env = gym.make(env_name)
+    env = ImgObsWrapper(env)
+    env.reset()
+    env.step(0)
+    env.close()
+
     # Test the fully observable wrapper
+    env = gym.make(env_name)
     env = FullyObsWrapper(env)
     env.reset()
     obs, _, _, _ = env.step(0)
     assert obs.shape == env.observation_space.shape
+    env.close()
 
+    env = gym.make(env_name)
+    env = FlatObsWrapper(env)
+    env.reset()
+    env.step(0)
+    env.close()
+
+    env = gym.make(env_name)
+    env = AgentViewWrapper(env, 5)
+    env.reset()
+    env.step(0)
     env.close()
 
 ##############################################################################
