@@ -832,7 +832,7 @@ class MiniGridEnv(gym.Env):
         Generate random integer in [low,high[
         """
 
-        return self.np_random.randint(low, high)
+        return np.random.randint(low, high)
 
     def _rand_float(self, low, high):
         """
@@ -1030,25 +1030,27 @@ class MiniGridEnv(gym.Env):
         Get the extents of the square set of tiles visible to the agent
         Note: the bottom extent indices are not included in the set
         """
-
-        # Facing right
-        if self.agent_dir == 0:
-            topX = self.agent_pos[0]
-            topY = self.agent_pos[1] - self.agent_view_size // 2
-        # Facing down
-        elif self.agent_dir == 1:
-            topX = self.agent_pos[0] - self.agent_view_size // 2
-            topY = self.agent_pos[1]
-        # Facing left
-        elif self.agent_dir == 2:
-            topX = self.agent_pos[0] - self.agent_view_size + 1
-            topY = self.agent_pos[1] - self.agent_view_size // 2
-        # Facing up
-        elif self.agent_dir == 3:
-            topX = self.agent_pos[0] - self.agent_view_size // 2
-            topY = self.agent_pos[1] - self.agent_view_size + 1
-        else:
-            assert False, "invalid agent direction"
+        # make observation only be square around agent
+        topX = self.agent_pos[0] - self.agent_view_size // 2
+        topY = self.agent_pos[1] - self.agent_view_size // 2
+        # # Facing right
+        # if self.agent_dir == 0:
+        #     topX = self.agent_pos[0]
+        #     topY = self.agent_pos[1] - self.agent_view_size // 2
+        # # Facing down
+        # elif self.agent_dir == 1:
+        #     topX = self.agent_pos[0] - self.agent_view_size // 2
+        #     topY = self.agent_pos[1]
+        # # Facing left
+        # elif self.agent_dir == 2:
+        #     topX = self.agent_pos[0] - self.agent_view_size + 1
+        #     topY = self.agent_pos[1] - self.agent_view_size // 2
+        # # Facing up
+        # elif self.agent_dir == 3:
+        #     topX = self.agent_pos[0] - self.agent_view_size // 2
+        #     topY = self.agent_pos[1] - self.agent_view_size + 1
+        # else:
+        #     assert False, "invalid agent direction"
 
         botX = topX + self.agent_view_size
         botY = topY + self.agent_view_size
@@ -1168,8 +1170,8 @@ class MiniGridEnv(gym.Env):
 
         grid = self.grid.slice(topX, topY, self.agent_view_size, self.agent_view_size)
 
-        for i in range(self.agent_dir + 1):
-            grid = grid.rotate_left()
+        # for i in range(self.agent_dir + 1):
+        #     grid = grid.rotate_left()
 
         # Process occluders and visibility
         # Note that this incurs some performance cost
