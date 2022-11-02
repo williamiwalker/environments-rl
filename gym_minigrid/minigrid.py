@@ -681,6 +681,7 @@ class MiniGridEnv(gym.Env):
 
         # Number of cells (width and height) in the agent view
         self.agent_view_size = agent_view_size
+        print('see through walls?',see_through_walls)
 
         # Observations are dictionaries containing an
         # encoding of the grid and a textual 'mission' string

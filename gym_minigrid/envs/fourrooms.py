@@ -15,7 +15,7 @@ class FourRoomsEnv(MiniGridEnv):
         print('using modified four rooms environment...')
         self._agent_default_pos = agent_pos
         self._goal_default_pos = goal_pos
-        super().__init__(grid_size=19, max_steps=100)
+        super().__init__(grid_size=9, max_steps=100000, see_through_walls=True)
 
     def _gen_grid(self, width, height):
         # Create the grid
@@ -68,6 +68,9 @@ class FourRoomsEnv(MiniGridEnv):
             self.place_obj(Goal())
 
         self.mission = 'Reach the goal'
+
+    def get_map(self):
+        return self.grid.encode()
 
     def step(self, action):
         for act in range(action):
